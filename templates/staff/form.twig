@@ -1,0 +1,113 @@
+{% extends 'layout.twig' %}
+
+{% block title %}{{ trans('add_staff') }} - {{ trans('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <a href="/staff" class="text-xs font-semibold text-slate-500 hover:text-slate-900 transition flex items-center gap-1">
+            &larr; Back to Staff List
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+        <h1 class="text-xl font-bold text-slate-900 mb-6">{{ trans('add_staff') }}</h1>
+
+        {% if error %}
+        <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="/staff" method="POST" class="space-y-4">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+            <div>
+                <label for="name" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                    {{ trans('staff_name') }}
+                </label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    required 
+                    value="{{ staff.name|default('') }}"
+                    placeholder="e.g. Ali Ahmed"
+                    class="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base"
+                >
+            </div>
+
+            <div>
+                <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                    {{ trans('email') }}
+                </label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required 
+                    value="{{ staff.email|default('') }}"
+                    placeholder="ali@workshop.local"
+                    class="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base"
+                >
+            </div>
+
+            <div>
+                <label for="phone" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                    {{ trans('staff_phone') }}
+                </label>
+                <input 
+                    type="tel" 
+                    id="phone" 
+                    name="phone" 
+                    value="{{ staff.phone|default('') }}"
+                    placeholder="0750XXXXXXX"
+                    class="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base"
+                >
+            </div>
+
+            <div>
+                <label for="role" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                    {{ trans('staff_role') }}
+                </label>
+                <select 
+                    id="role" 
+                    name="role" 
+                    required
+                    class="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base cursor-pointer"
+                >
+                    <option value="TECH" {% if staff.role == 'TECH' %}selected{% endif %}>{{ trans('role_tech') }} (Technician)</option>
+                    <option value="MANAGER" {% if staff.role == 'MANAGER' %}selected{% endif %}>{{ trans('role_manager') }} (Manager)</option>
+                    <option value="ADMIN" {% if staff.role == 'ADMIN' %}selected{% endif %}>{{ trans('role_admin') }} (Admin)</option>
+                    <option value="OWNER" {% if staff.role == 'OWNER' %}selected{% endif %}>{{ trans('role_owner') }} (Owner)</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="temp_password" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">
+                    {{ trans('temp_password') }}
+                </label>
+                <input 
+                    type="password" 
+                    id="temp_password" 
+                    name="temp_password" 
+                    required 
+                    autocomplete="new-password"
+                    placeholder="At least 8 characters"
+                    class="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-base"
+                >
+                <p class="text-[11px] text-slate-500 mt-1">The user will be required to change this password upon their first login.</p>
+            </div>
+
+            <div class="pt-4 flex items-center justify-end gap-3">
+                <a href="/staff" class="py-2.5 px-4 text-xs font-semibold text-slate-600 hover:text-slate-900 transition">
+                    {{ trans('cancel') }}
+                </a>
+                <button type="submit" class="py-2.5 px-5 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition shadow-xs">
+                    {{ trans('save') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

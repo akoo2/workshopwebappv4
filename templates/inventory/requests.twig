@@ -1,0 +1,101 @@
+{% extends 'layout.twig' %}
+
+{% block title %}Technician Part Requests - {{ trans('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Technician Part Requests</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Bench requests for out-of-stock boards, backlights & supplier acquisitions.</p>
+        </div>
+
+        <a href="/inventory" class="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition self-start sm:self-auto">
+            &larr; Back to Inventory
+        </a>
+    </div>
+
+    <!-- Request Submission Card for Technicians -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold text-slate-900 mb-3">Submit Bench Part Request</h2>
+
+        <form action="/inventory/requests" method="POST" class="space-y-3 text-xs">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="sm:col-span-2">
+                    <label class="block font-semibold uppercase text-slate-600 mb-1">Part / Board Model</label>
+                    <input type="text" name="part_name" required placeholder="e.g. LG OLED65C2 Mainboard EAX6982" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-semibold uppercase text-slate-600 mb-1">Quantity Needed</label>
+                    <input type="number" name="quantity" min="1" value="1" required class="w-full px-3 py-2 border border-slate-300 rounded-lg tabular-nums">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold uppercase text-slate-600 mb-1">Details / Repair Ticket Context</label>
+                <input type="text" name="description" required placeholder="For ticket TICK-8022 or customer waiting since yesterday" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+            </div>
+
+            <div class="flex justify-end pt-1">
+                <button type="submit" class="py-2 px-4 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition">
+                    Submit Request
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Active Requests Queue -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100 text-xs">
+        {% for req in requests %}
+        <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-bold text-slate-900 text-sm">{{ req.part_name }}</span>
+                    <span class="tabular-nums font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                        Qty: {{ req.quantity }}
+                    </span>
+                    <span class={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider
+                        {% if req.status == 'RECEIVED' %}bg-emerald-100 text-emerald-800
+                        {% elseif req.status == 'ORDERED' %}bg-blue-100 text-blue-800
+                        {% elseif req.status == 'CANCELLED' %}bg-red-100 text-red-800
+                        {% else %}bg-amber-100 text-amber-800{% endif %}`}>
+                        {{ req.status }}
+                    </span>
+                </div>
+
+                <p class="text-slate-600 mt-1">{{ req.description }}</p>
+
+                <div class="text-[11px] text-slate-400 mt-2 flex items-center gap-3 flex-wrap">
+                    <span>Requested by: <strong>{{ req.requested_by_name }}</strong></span>
+                    <span>·</span>
+                    <span>{{ req.created_at }}</span>
+                    {% if req.resolution_note %}
+                    <span>· Note: <em class="text-slate-600">{{ req.resolution_note }}</em></span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Management Status Controls (Managers / Admins / Owners) -->
+            {% if user.role in ['MANAGER', 'ADMIN', 'OWNER'] %}
+            <form action="/inventory/requests/{{ req.id }}/status" method="POST" class="flex items-center gap-2 self-end sm:self-center">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <select name="status" class="py-1 px-2 border border-slate-200 rounded-lg text-xs bg-slate-50 font-semibold">
+                    <option value="REQUESTED" {% if req.status == 'REQUESTED' %}selected{% endif %}>REQUESTED</option>
+                    <option value="ORDERED" {% if req.status == 'ORDERED' %}selected{% endif %}>ORDERED</option>
+                    <option value="RECEIVED" {% if req.status == 'RECEIVED' %}selected{% endif %}>RECEIVED</option>
+                    <option value="CANCELLED" {% if req.status == 'CANCELLED' %}selected{% endif %}>CANCELLED</option>
+                </select>
+                <button type="submit" class="py-1 px-2.5 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition">
+                    Update
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="p-8 text-center text-slate-400">No active part requests.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

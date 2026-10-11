@@ -1,0 +1,115 @@
+{% extends 'layout.twig' %}
+
+{% block title %}{{ trans('repairs') }} - {{ trans('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">{{ trans('repairs') }}</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Workbench tickets, diagnosis, parts consumed, and customer pickups.</p>
+        </div>
+
+        <a href="/repairs/new" class="py-2.5 px-4 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-xs self-start sm:self-auto">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>{{ trans('newTicket') }}</span>
+        </a>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm text-xs">
+        <form method="GET" action="/repairs" class="flex flex-col sm:flex-row items-center gap-3">
+            <select name="status" onchange="this.form.submit()" class="w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-700 font-semibold cursor-pointer">
+                <option value="">All Statuses</option>
+                <option value="CHECKED_IN" {% if selected_status == 'CHECKED_IN' %}selected{% endif %}>Checked In</option>
+                <option value="DIAGNOSING" {% if selected_status == 'DIAGNOSING' %}selected{% endif %}>Diagnosing</option>
+                <option value="PENDING_CUSTOMER_APPROVAL" {% if selected_status == 'PENDING_CUSTOMER_APPROVAL' %}selected{% endif %}>Pending Customer Approval</option>
+                <option value="IN_PROGRESS" {% if selected_status == 'IN_PROGRESS' %}selected{% endif %}>In Progress (Bench)</option>
+                <option value="TESTING_BURN_IN" {% if selected_status == 'TESTING_BURN_IN' %}selected{% endif %}>Testing / Burn-in</option>
+                <option value="READY_FOR_PICKUP" {% if selected_status == 'READY_FOR_PICKUP' %}selected{% endif %}>Ready for Pickup</option>
+                <option value="DELIVERED_CLOSED" {% if selected_status == 'DELIVERED_CLOSED' %}selected{% endif %}>Delivered & Closed</option>
+            </select>
+
+            <select name="tech" onchange="this.form.submit()" class="w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-700 font-semibold cursor-pointer">
+                <option value="0">All Technicians</option>
+                {% for t in technicians %}
+                <option value="{{ t.id }}" {% if selected_tech == t.id %}selected{% endif %}>{{ t.name }}</option>
+                {% endfor %}
+            </select>
+
+            <input type="text" name="q" value="{{ search }}" placeholder="Search ticket #, brand, customer phone..." class="w-full flex-1 bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-700">
+
+            <button type="submit" class="py-2 px-4 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 transition">Filter</button>
+        </form>
+    </div>
+
+    <!-- Tickets List -->
+    <div class="space-y-4">
+        {% for r in repairs %}
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-slate-300 transition">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <a href="/repairs/{{ r.id }}" class="font-mono text-sm font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100 hover:underline">
+                        {{ r.ticket_number }}
+                    </a>
+                    <span class="font-bold text-slate-900 text-sm">
+                        {{ r.tv_brand }} {{ r.tv_model }}
+                    </span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider
+                        {% if r.status == 'READY_FOR_PICKUP' %}bg-emerald-100 text-emerald-800
+                        {% elseif r.status == 'IN_PROGRESS' %}bg-amber-100 text-amber-800
+                        {% elseif r.status == 'DELIVERED_CLOSED' %}bg-slate-100 text-slate-700
+                        {% else %}bg-blue-100 text-blue-800{% endif %}">
+                        {{ r.status|replace({'_': ' '}) }}
+                    </span>
+                </div>
+
+                <div class="text-xs text-slate-500 tabular-nums">
+                    {{ r.created_at }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 my-3 text-xs">
+                <div>
+                    <span class="text-slate-400 font-medium block">Customer:</span>
+                    <span class="font-bold text-slate-900">{{ r.customer_name }}</span>
+                    <span class="text-slate-500 ml-1">({{ r.customer_phone }})</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 font-medium block">Reported Fault:</span>
+                    <p class="text-slate-700 italic">{{ r.fault_description }}</p>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <span>Tech: <strong>{{ r.tech_name|default('Unassigned') }}</strong></span>
+                    <span>·</span>
+                    <span class="font-bold tabular-nums text-slate-900">
+                        Total: {{ r.currency == 'USD' ? '$' ~ r.total_charged : r.total_charged|number_format ~ ' IQD' }}
+                    </span>
+                    {% if r.amount_paid > 0 %}
+                    <span class="text-emerald-600 font-semibold tabular-nums">
+                        (Paid: {{ r.amount_paid|number_format }} IQD)
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <a href="/repairs/{{ r.id }}/print" target="_blank" class="py-1.5 px-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold transition">
+                        Print Thermal Ticket
+                    </a>
+                    <a href="/repairs/{{ r.id }}" class="py-1.5 px-3.5 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 transition">
+                        Workbench &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-400 text-xs">
+            No repair tickets found.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'layout.twig' %}
+
+{% block title %}{{ trans('staff_title') }} - {{ trans('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Add Button -->
+    <div class="flex items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">{{ trans('staff_title') }}</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Manage workshop personnel, access roles, and active sessions.</p>
+        </div>
+        <a href="/staff/new" class="py-2.5 px-4 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition shadow-xs flex items-center gap-1.5 shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>{{ trans('add_staff') }}</span>
+        </a>
+    </div>
+
+    <!-- Backup Warning Banner (if > 36 hours old) -->
+    {% if backup_warning %}
+    <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-3 shadow-xs">
+        <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div>
+            <span class="font-bold">{{ trans('last_backup_warning') }}</span>
+            <div class="mt-0.5 text-slate-600">
+                {{ trans('last_backup_time') }}: {{ last_backup_time|default('Never') }} (UTC). Verify the server cron job and off-server destination.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Staff Accounts List -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="divide-y divide-slate-100">
+            {% for s in staff %}
+            <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 transition">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm shrink-0">
+                        {{ s.name|slice(0, 1)|upper }}
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-bold text-slate-900 text-sm">{{ s.name }}</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider
+                                {% if s.role == 'OWNER' %}bg-purple-100 text-purple-700
+                                {% elseif s.role == 'ADMIN' %}bg-blue-100 text-blue-700
+                                {% elseif s.role == 'MANAGER' %}bg-emerald-100 text-emerald-700
+                                {% else %}bg-slate-100 text-slate-700{% endif %}">
+                                {{ s.role }}
+                            </span>
+                            {% if not s.is_active %}
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 bg-red-100 text-red-700 rounded-md">Disabled</span>
+                            {% endif %}
+                            {% if s.is_locked %}
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-md">Locked</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-xs text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
+                            <span>{{ s.email }}</span>
+                            {% if s.phone %}
+                            <span aria-hidden="true">·</span>
+                            <span>{{ s.phone }}</span>
+                            {% endif %}
+                            <span aria-hidden="true">·</span>
+                            <span class="tabular-nums">{{ s.active_sessions_count }} active sessions</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 self-end sm:self-center">
+                    <a href="/staff/{{ s.id }}" class="py-1.5 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
+                        Manage &rarr;
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="p-8 text-center text-slate-500 text-sm">
+                No staff members found.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

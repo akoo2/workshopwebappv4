@@ -1,0 +1,67 @@
+{% extends 'layout.twig' %}
+
+{% block title %}{{ trans('profile') }} - {{ trans('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <!-- User Information Card -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-xl font-bold text-slate-900">{{ trans('profile') }}</h1>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 uppercase">
+                {{ user.role }}
+            </span>
+        </div>
+
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div>
+                <dt class="text-xs text-slate-500">{{ trans('staff_name') }}</dt>
+                <dd class="font-medium text-slate-900 mt-0.5">{{ user.name }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs text-slate-500">{{ trans('email') }}</dt>
+                <dd class="font-medium text-slate-900 mt-0.5">{{ user.email }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs text-slate-500">{{ trans('staff_phone') }}</dt>
+                <dd class="font-medium text-slate-900 mt-0.5">{{ user.phone|default('-') }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs text-slate-500">{{ trans('language') }}</dt>
+                <dd class="font-medium text-slate-900 mt-0.5 uppercase">{{ user.language }}</dd>
+            </div>
+        </dl>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+            <a href="/profile/password" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition">
+                {{ trans('change_password') }} &rarr;
+            </a>
+        </div>
+    </div>
+
+    <!-- Active Sessions List -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <h2 class="text-base font-bold text-slate-900 mb-4">{{ trans('active_sessions') }}</h2>
+        <div class="divide-y divide-slate-100">
+            {% for s in sessions %}
+            <div class="py-3 flex items-center justify-between gap-4">
+                <div>
+                    <div class="text-sm font-medium text-slate-900 flex items-center gap-2">
+                        <span>{{ s.ip_address }}</span>
+                        {% if s.id_hash == current_hash %}
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-sm">Current</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-xs text-slate-400 mt-0.5 truncate max-w-xs sm:max-w-md">
+                        {{ s.user_agent }}
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-0.5 tabular-nums">
+                        {{ trans('last_active') }}: {{ s.last_activity }} (UTC)
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

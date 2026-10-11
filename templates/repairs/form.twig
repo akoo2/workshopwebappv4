@@ -1,0 +1,136 @@
+{% extends 'layout.twig' %}
+
+{% block title %}Check-in TV - {{ trans('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <a href="/repairs" class="text-xs font-semibold text-slate-500 hover:text-slate-900 transition flex items-center gap-1">
+            &larr; Back to Repairs
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+        <h1 class="text-xl font-bold text-slate-900 mb-6">TV Intake & Check-in</h1>
+
+        <form action="/repairs" method="POST" class="space-y-4 text-xs">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+            <!-- Customer Selection or Quick Create -->
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                <span class="font-bold text-slate-800 block text-sm">1. Customer Identification</span>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Select Existing Customer</label>
+                    <select name="customer_id" id="customer-select" class="w-full px-3 py-2.5 rounded-lg border border-slate-300 bg-white text-xs">
+                        <option value="0">-- Or Register New Customer Below --</option>
+                        {% for c in customers %}
+                        <option value="{{ c.id }}">{{ c.name }} ({{ c.phone }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">New Customer Full Name</label>
+                        <input type="text" name="new_cust_name" placeholder="Leave empty if existing chosen" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">New Customer Phone (0750...)</label>
+                        <input type="tel" name="new_cust_phone" placeholder="0750XXXXXXX" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs">
+                    </div>
+                </div>
+            </div>
+
+            <!-- TV Specifications -->
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                <span class="font-bold text-slate-800 block text-sm">2. Television Device Data</span>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Brand</label>
+                        <input type="text" name="tv_brand" required placeholder="e.g. Samsung, LG, Sony" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Model Number</label>
+                        <input type="text" name="tv_model" required placeholder="e.g. 55AU7000" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Serial Number (Optional)</label>
+                        <input type="text" name="tv_serial" placeholder="SN on back label" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Accessories Received</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" name="acc_power_cable" class="rounded text-indigo-600">
+                            <span>Power Cable</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" name="acc_remote" class="rounded text-indigo-600">
+                            <span>Remote</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" name="acc_stand" class="rounded text-indigo-600">
+                            <span>Base Stand</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" name="acc_wall_mount" class="rounded text-indigo-600">
+                            <span>Wall Brackets</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Cosmetic Condition / Scratches</label>
+                    <input type="text" name="cosmetic_condition" placeholder="e.g. Slight bezel scratch top right, screen glass intact" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs">
+                </div>
+            </div>
+
+            <!-- Fault & Bench Assignment -->
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                <span class="font-bold text-slate-800 block text-sm">3. Fault Diagnosis & Labor Quote</span>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Customer Reported Fault</label>
+                    <textarea name="fault_description" required rows="2" placeholder="e.g. Red light flashes twice, no picture, clicks off after 5 seconds" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Assign Technician</label>
+                        <select name="technician_id" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs">
+                            <option value="">Unassigned (Queue)</option>
+                            {% for t in technicians %}
+                            <option value="{{ t.id }}">{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Labor Fee Estimate</label>
+                        <input type="number" name="labor_fee" value="25000" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs tabular-nums">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Currency</label>
+                        <select name="currency" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs">
+                            <option value="IQD">IQD (Iraqi Dinar)</option>
+                            <option value="USD">USD (US Dollar)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 flex justify-end gap-3">
+                <a href="/repairs" class="py-2.5 px-4 font-semibold text-slate-600 hover:text-slate-900 transition">
+                    {{ trans('cancel') }}
+                </a>
+                <button type="submit" class="py-2.5 px-5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition shadow-xs">
+                    Complete Intake & Print Ticket
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'layout.twig' %}
+
+{% block title %}Operating Expenses - {{ trans('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Workshop Operating Expenses</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Generator diesel, workshop rent, tools, consumables & staff commissions.</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a href="/expenses/export" class="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">
+                Export Expenses CSV
+            </a>
+            <button onclick="document.getElementById('new-expense-modal').classList.remove('hidden')" class="py-2.5 px-4 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>Record Expense</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Expenses List -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-xs divide-y divide-slate-100">
+        {% for e in expenses %}
+        <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-bold text-slate-900 text-sm">{{ e.category|replace({'_': ' '}) }}</span>
+                    <span class="text-slate-400">· Date: {{ e.expense_date }}</span>
+                    <span class="text-slate-400">· By {{ e.recorded_by_name }}</span>
+                </div>
+                {% if e.notes %}
+                <p class="text-slate-600 mt-1 italic">{{ e.notes }}</p>
+                {% endif %}
+            </div>
+
+            <div class="text-right">
+                <span class="text-base font-bold text-slate-900 tabular-nums">
+                    {{ e.currency == 'USD' ? '$' ~ e.amount : e.amount|number_format ~ ' IQD' }}
+                </span>
+                <span class="text-[10px] text-slate-400 block tabular-nums">
+                    ({{ e.amount_iqd_equivalent|number_format }} IQD eq.)
+                </span>
+            </div>
+        </div>
+        {% else %}
+        <div class="p-8 text-center text-slate-400">No expenses recorded yet.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal: Record Expense -->
+<div id="new-expense-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden text-xs">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200">
+        <h3 class="font-bold text-slate-900 text-sm mb-3">Record Workshop Expense</h3>
+
+        <form action="/expenses" method="POST" class="space-y-3">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Expense Category</label>
+                <select name="category" required class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                    <option value="ELECTRICITY_GENERATOR">Electricity & Generator Diesel</option>
+                    <option value="RENT">Workshop Shop Rent</option>
+                    <option value="TOOLS_EQUIPMENT">Tools & Soldering Equipment</option>
+                    <option value="SALARIES_COMMISSIONS">Salaries & Technician Commissions</option>
+                    <option value="SUPPLIES_CONSUMABLES">Supplies & Chemical Consumables</option>
+                    <option value="OTHER">Other Expenses</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Amount</label>
+                    <input type="number" name="amount" required placeholder="e.g. 50000" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Currency</label>
+                    <select name="currency" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                        <option value="IQD">IQD</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Expense Date</label>
+                <input type="date" name="expense_date" required value="{{ 'now'|date('Y-m-d') }}" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Notes / Invoice Context</label>
+                <input type="text" name="notes" placeholder="e.g. 200L Generator fuel delivery" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('new-expense-modal').classList.add('hidden')" class="py-1.5 px-3 rounded-lg text-slate-600 font-semibold">
+                    Cancel
+                </button>
+                <button type="submit" class="py-1.5 px-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700">
+                    Save Expense
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,256 @@
+{% extends 'layout.twig' %}
+
+{% block title %}{{ repair.ticket_number }} - {{ trans('repairs') }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <a href="/repairs" class="text-xs font-semibold text-slate-500 hover:text-slate-900 transition flex items-center gap-1">
+            &larr; Back to Repairs List
+        </a>
+
+        <div class="flex items-center gap-2">
+            <a href="/repairs/{{ repair.id }}/print" target="_blank" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">
+                Print 80mm Thermal Receipt
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Ticket Overview Card -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+                <div class="flex items-center gap-3">
+                    <span class="font-mono text-base font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+                        {{ repair.ticket_number }}
+                    </span>
+                    <h1 class="text-xl font-bold text-slate-900">{{ repair.tv_brand }} {{ repair.tv_model }}</h1>
+                </div>
+                <div class="text-xs text-slate-500 mt-1">Checked in: {{ repair.created_at }}</div>
+            </div>
+
+            <!-- Status Transition Form -->
+            <form action="/repairs/{{ repair.id }}/status" method="POST" class="flex items-center gap-2">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <select name="status" class="py-2 px-3 border border-slate-200 rounded-xl text-xs font-semibold bg-slate-50">
+                    <option value="CHECKED_IN" {% if repair.status == 'CHECKED_IN' %}selected{% endif %}>Checked In</option>
+                    <option value="DIAGNOSING" {% if repair.status == 'DIAGNOSING' %}selected{% endif %}>Diagnosing</option>
+                    <option value="PENDING_CUSTOMER_APPROVAL" {% if repair.status == 'PENDING_CUSTOMER_APPROVAL' %}selected{% endif %}>Pending Customer Approval</option>
+                    <option value="IN_PROGRESS" {% if repair.status == 'IN_PROGRESS' %}selected{% endif %}>In Progress (Bench)</option>
+                    <option value="TESTING_BURN_IN" {% if repair.status == 'TESTING_BURN_IN' %}selected{% endif %}>Testing / Burn-in</option>
+                    <option value="READY_FOR_PICKUP" {% if repair.status == 'READY_FOR_PICKUP' %}selected{% endif %}>Ready for Pickup</option>
+                    <option value="DELIVERED_CLOSED" {% if repair.status == 'DELIVERED_CLOSED' %}selected{% endif %}>Delivered & Closed</option>
+                    <option value="DIDNT_AGREE_RETURNED" {% if repair.status == 'DIDNT_AGREE_RETURNED' %}selected{% endif %}>Customer Rejected Quote</option>
+                    <option value="UNREPAIRABLE" {% if repair.status == 'UNREPAIRABLE' %}selected{% endif %}>Unrepairable</option>
+                </select>
+                <button type="submit" class="py-2 px-3 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition">
+                    Update
+                </button>
+            </form>
+        </div>
+
+        <!-- Two Columns: Customer & TV Device Specs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+                <span class="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Customer Contact</span>
+                <div class="font-bold text-sm text-slate-900">{{ repair.customer_name }}</div>
+                <div class="text-indigo-600 font-semibold">{{ repair.customer_phone }}</div>
+                {% if repair.customer_address %}<div class="text-slate-500">{{ repair.customer_address }}</div>{% endif %}
+            </div>
+
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+                <span class="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">Device & Fault</span>
+                <div>Brand/Model: <strong class="text-slate-800">{{ repair.tv_brand }} {{ repair.tv_model }}</strong></div>
+                {% if repair.tv_serial %}<div>Serial Number: <code class="text-slate-600 font-mono">{{ repair.tv_serial }}</code></div>{% endif %}
+                <div>Accessories: <span class="text-slate-600">{{ repair.accessories_received }}</span></div>
+                <div class="pt-1">
+                    <span class="text-slate-400 block font-medium">Fault:</span>
+                    <p class="text-slate-800 italic">{{ repair.fault_description }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Summary Banner -->
+        <div class="p-4 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+            <div class="flex items-center gap-6">
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Labor Quote</span>
+                    <span class="font-bold text-base tabular-nums">
+                        {{ repair.currency == 'USD' ? '$' ~ repair.labor_fee : repair.labor_fee|number_format ~ ' IQD' }}
+                    </span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Parts Total</span>
+                    <span class="font-bold text-base tabular-nums">
+                        {{ repair.currency == 'USD' ? '$' ~ repair.parts_total : repair.parts_total|number_format ~ ' IQD' }}
+                    </span>
+                </div>
+                <div class="border-l border-slate-800 pl-6">
+                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">Total Charged</span>
+                    <span class="font-bold text-base text-indigo-400 tabular-nums">
+                        {{ repair.currency == 'USD' ? '$' ~ repair.total_charged : repair.total_charged|number_format ~ ' IQD' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <span class="text-slate-400 block text-[10px] uppercase font-semibold">Total Paid to Date</span>
+                <span class="font-bold text-base text-emerald-400 tabular-nums">
+                    {{ paid_total_iqd|number_format }} IQD
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parts Consumed on this Ticket -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm text-xs space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-sm font-bold text-slate-900">Spare Parts Consumed on Bench ({{ consumed_parts|length }})</h2>
+            <button onclick="document.getElementById('consume-part-modal').classList.remove('hidden')" class="py-1.5 px-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition cursor-pointer">
+                + Consume Part from Stock
+            </button>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+            {% for cp in consumed_parts %}
+            <div class="py-2.5 flex items-center justify-between">
+                <div>
+                    <span class="font-bold text-slate-900">{{ cp.part_name }}</span>
+                    <span class="text-slate-400 ml-2">Qty: {{ cp.quantity }}</span>
+                </div>
+                <div class="font-bold tabular-nums text-slate-800">
+                    {{ cp.currency == 'USD' ? '$' ~ cp.total_price : cp.total_price|number_format ~ ' IQD' }}
+                </div>
+            </div>
+            {% else %}
+            <div class="py-4 text-center text-slate-400">No inventory parts consumed on this repair yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Payments & Receipts -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm text-xs space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-sm font-bold text-slate-900">Payments & Receipts ({{ payments|length }})</h2>
+            <button onclick="document.getElementById('payment-modal').classList.remove('hidden')" class="py-1.5 px-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition cursor-pointer">
+                + Record Payment
+            </button>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+            {% for pay in payments %}
+            <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 {% if pay.is_voided %}opacity-50 line-through{% endif %}">
+                <div>
+                    <div class="font-bold text-slate-900">
+                        {{ pay.currency == 'USD' ? '$' ~ pay.amount : pay.amount|number_format ~ ' IQD' }}
+                        <span class="text-[10px] font-normal text-slate-400 ml-2">
+                            ({{ pay.amount_iqd_equivalent|number_format }} IQD eq. @ rate {{ pay.exchange_rate_snapshot }})
+                        </span>
+                    </div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">
+                        Received by {{ pay.recorded_by_name }} · Method: {{ pay.payment_method }} · {{ pay.created_at }}
+                        {% if pay.is_voided %}
+                        <span class="text-red-600 ml-2 font-bold">[VOIDED: {{ pay.void_reason }}]</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if not pay.is_voided %}
+                <form action="/payments/{{ pay.id }}/void" method="POST" class="self-end sm:self-auto">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="void_reason" value="Customer refund or entry correction">
+                    <button type="submit" class="py-1 px-2.5 rounded text-red-600 hover:bg-red-50 font-semibold border border-red-200 text-[10px]">
+                        Void Payment
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="py-4 text-center text-slate-400">No payments recorded yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Consume Part from Stock -->
+<div id="consume-part-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden text-xs">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200">
+        <h3 class="font-bold text-slate-900 text-sm mb-3">Add Inventory Component</h3>
+
+        <form action="/repairs/{{ repair.id }}/parts" method="POST" class="space-y-3">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Select Component</label>
+                <select name="part_id" required class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                    {% for p in available_parts %}
+                    <option value="{{ p.id }}">{{ p.name }} ({{ p.quantity }} in stock - ${{ p.selling_price }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Quantity</label>
+                <input type="number" name="quantity" min="1" value="1" required class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('consume-part-modal').classList.add('hidden')" class="py-1.5 px-3 rounded-lg text-slate-600 font-semibold">
+                    Cancel
+                </button>
+                <button type="submit" class="py-1.5 px-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700">
+                    Add & Deduct Stock
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Record Payment -->
+<div id="payment-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden text-xs">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200">
+        <h3 class="font-bold text-slate-900 text-sm mb-3">Record Customer Payment</h3>
+
+        <form action="/repairs/{{ repair.id }}/payments" method="POST" class="space-y-3">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Amount</label>
+                    <input type="number" name="amount" required placeholder="e.g. 50000" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Currency</label>
+                    <select name="currency" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                        <option value="IQD">IQD</option>
+                        <option value="USD">USD</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Payment Method</label>
+                <select name="payment_method" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                    <option value="CASH">CASH (Cash in Hand)</option>
+                    <option value="TRANSFER">TRANSFER (FIB / FastPay / ZainCash)</option>
+                    <option value="CARD">CARD (POS)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Receipt Note (Optional)</label>
+                <input type="text" name="notes" placeholder="e.g. Paid advance deposit" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('payment-modal').classList.add('hidden')" class="py-1.5 px-3 rounded-lg text-slate-600 font-semibold">
+                    Cancel
+                </button>
+                <button type="submit" class="py-1.5 px-3 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700">
+                    Confirm Payment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

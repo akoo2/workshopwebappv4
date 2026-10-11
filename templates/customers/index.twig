@@ -1,0 +1,83 @@
+{% extends 'layout.twig' %}
+
+{% block title %}{{ trans('customers') }} - {{ trans('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">{{ trans('customers') }}</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Directory of workshop customers with phone search and repair history.</p>
+        </div>
+        <a href="/customers/new" class="py-2.5 px-4 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-xs self-start sm:self-auto">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>Add Customer</span>
+        </a>
+    </div>
+
+    <!-- Search Bar with Phone & Name Support -->
+    <form method="GET" action="/customers" class="flex gap-2">
+        <div class="relative flex-1">
+            <input 
+                type="text" 
+                name="q" 
+                value="{{ query|default('') }}" 
+                placeholder="Search by phone (0750...) or customer name..." 
+                class="w-full py-2.5 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+        </div>
+        <button type="submit" class="py-2.5 px-5 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition">
+            {{ trans('search') }}
+        </button>
+        {% if query %}
+        <a href="/customers" class="py-2.5 px-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">
+            Clear
+        </a>
+        {% endif %}
+    </form>
+
+    <!-- Customers List -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
+        {% for c in customers %}
+        <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 transition">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0">
+                    {{ c.name|slice(0, 1)|upper }}
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <a href="/customers/{{ c.id }}" class="font-bold text-slate-900 text-sm hover:text-indigo-600 transition">
+                            {{ c.name }}
+                        </a>
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                            {{ c.total_repairs }} repairs
+                        </span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1 flex items-center gap-3 flex-wrap">
+                        <span class="font-semibold text-slate-700">{{ c.phone }}</span>
+                        {% if c.alt_phone %}
+                        <span aria-hidden="true">·</span>
+                        <span>Alt: {{ c.alt_phone }}</span>
+                        {% endif %}
+                        {% if c.address %}
+                        <span aria-hidden="true">·</span>
+                        <span class="text-slate-400">{{ c.address }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-end sm:self-center">
+                <a href="/customers/{{ c.id }}" class="py-1.5 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
+                    Profile & History &rarr;
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="p-8 text-center text-slate-500 text-xs">
+            No customers found matching your criteria.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

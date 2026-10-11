@@ -1,0 +1,81 @@
+{% extends 'layout.twig' %}
+
+{% block title %}Financial Reports & P&L - {{ trans('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Workshop Financial Dashboard & P&L</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Profit & Loss statement, operational costs, technician metrics & aging receivables.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a href="/reports/export/repairs" class="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">
+                Export Repairs CSV
+            </a>
+            <a href="/reports/export/inventory" class="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">
+                Export Inventory CSV
+            </a>
+            <a href="/expenses/export" class="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">
+                Export Expenses CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Navigation Subtabs -->
+    <div class="flex items-center gap-2 border-b border-slate-200 pb-3 text-xs font-semibold">
+        <a href="/reports" class="py-1.5 px-3 rounded-lg bg-indigo-600 text-white">Profit & Loss (P&L)</a>
+        <a href="/reports/technicians" class="py-1.5 px-3 rounded-lg bg-white text-slate-600 hover:bg-slate-50 border border-slate-200">Technician Productivity</a>
+        <a href="/reports/aging" class="py-1.5 px-3 rounded-lg bg-white text-slate-600 hover:bg-slate-50 border border-slate-200">Aging Unpaid Tickets</a>
+    </div>
+
+    <!-- P&L Metric Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Gross Payments Collected</span>
+            <div class="text-2xl font-bold text-emerald-600 mt-1 tabular-nums">
+                {{ total_revenue_iqd|number_format }} IQD
+            </div>
+            <span class="text-xs text-slate-400 mt-0.5 block">
+                (~${{ (total_revenue_iqd / exchange_rate)|round(1) }})
+            </span>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Operating Expenses</span>
+            <div class="text-2xl font-bold text-red-600 mt-1 tabular-nums">
+                {{ total_expenses_iqd|number_format }} IQD
+            </div>
+            <span class="text-xs text-slate-400 mt-0.5 block">
+                (~${{ (total_expenses_iqd / exchange_rate)|round(1) }})
+            </span>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Net Workshop Profit</span>
+            <div class="text-2xl font-bold {% if net_profit_iqd >= 0 %}text-indigo-600{% else %}text-red-600{% endif %} mt-1 tabular-nums">
+                {{ net_profit_iqd|number_format }} IQD
+            </div>
+            <span class="text-xs text-slate-400 mt-0.5 block font-bold">
+                (~${{ net_profit_usd }})
+            </span>
+        </div>
+    </div>
+
+    <!-- Expenses by Category -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm text-xs">
+        <h2 class="text-sm font-bold text-slate-900 mb-4">Operating Expenses Breakdown by Category</h2>
+        <div class="divide-y divide-slate-100">
+            {% for cat in expenses_by_category %}
+            <div class="py-3 flex items-center justify-between">
+                <span class="font-bold text-slate-800">{{ cat.category|replace({'_': ' '}) }}</span>
+                <span class="font-bold text-slate-900 tabular-nums">{{ cat.cat_total|number_format }} IQD</span>
+            </div>
+            {% else %}
+            <div class="py-4 text-center text-slate-400">No expenses recorded yet.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

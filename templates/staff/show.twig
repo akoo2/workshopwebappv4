@@ -1,0 +1,178 @@
+{% extends 'layout.twig' %}
+
+{% block title %}{{ staff.name }} - {{ trans('staff_title') }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <a href="/staff" class="text-xs font-semibold text-slate-500 hover:text-slate-900 transition flex items-center gap-1">
+            &larr; Back to Staff List
+        </a>
+    </div>
+
+    <!-- Account Overview & Actions Bar -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-xl font-bold text-slate-900">{{ staff.name }}</h1>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-md uppercase tracking-wider
+                        {% if staff.role == 'OWNER' %}bg-purple-100 text-purple-700
+                        {% elseif staff.role == 'ADMIN' %}bg-blue-100 text-blue-700
+                        {% elseif staff.role == 'MANAGER' %}bg-emerald-100 text-emerald-700
+                        {% else %}bg-slate-100 text-slate-700{% endif %}">
+                        {{ staff.role }}
+                    </span>
+                    {% if not staff.is_active %}
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-red-100 text-red-700">Disabled</span>
+                    {% endif %}
+                    {% if staff.is_locked %}
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-700">Locked</span>
+                    {% endif %}
+                </div>
+                <div class="text-xs text-slate-500 mt-1">{{ staff.email }}</div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <!-- Toggle Active/Disable -->
+                <form action="/staff/{{ staff.id }}/status" method="POST">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    {% if staff.is_active %}
+                    <button type="submit" class="py-2 px-3 text-xs font-semibold rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition border border-red-200 cursor-pointer">
+                        Disable Account
+                    </button>
+                    {% else %}
+                    <button type="submit" class="py-2 px-3 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition border border-emerald-200 cursor-pointer">
+                        Enable Account
+                    </button>
+                    {% endif %}
+                </form>
+
+                <!-- Unlock if locked -->
+                {% if staff.is_locked %}
+                <form action="/staff/{{ staff.id }}/unlock" method="POST">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="py-2 px-3 text-xs font-semibold rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition border border-amber-200 cursor-pointer">
+                        {{ trans('unlock') }}
+                    </button>
+                </form>
+                {% endif %}
+
+                <!-- Revoke All Sessions -->
+                <form action="/staff/{{ staff.id }}/sessions/revoke" method="POST">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="py-2 px-3 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition cursor-pointer">
+                        {{ trans('revoke_sessions') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Profile Form -->
+        <form action="/staff/{{ staff.id }}" method="POST" class="pt-6 space-y-4">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                        {{ trans('staff_name') }}
+                    </label>
+                    <input type="text" name="name" required value="{{ staff.name }}" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                        {{ trans('staff_phone') }}
+                    </label>
+                    <input type="tel" name="phone" value="{{ staff.phone|default('') }}" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                        {{ trans('staff_role') }}
+                    </label>
+                    <select name="role" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white text-sm cursor-pointer">
+                        <option value="TECH" {% if staff.role == 'TECH' %}selected{% endif %}>TECH</option>
+                        <option value="MANAGER" {% if staff.role == 'MANAGER' %}selected{% endif %}>MANAGER</option>
+                        <option value="ADMIN" {% if staff.role == 'ADMIN' %}selected{% endif %}>ADMIN</option>
+                        <option value="OWNER" {% if staff.role == 'OWNER' %}selected{% endif %}>OWNER</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button type="submit" class="py-2 px-4 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Password Reset Card -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold text-slate-900 mb-2">{{ trans('reset_password') }}</h2>
+        <p class="text-xs text-slate-500 mb-4">Set a temporary password. The user will be required to change it on their next login and all active sessions will be revoked.</p>
+
+        <form action="/staff/{{ staff.id }}/reset-password" method="POST" class="flex flex-col sm:flex-row gap-3">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <input 
+                type="password" 
+                name="temp_password" 
+                required 
+                placeholder="Temporary Password (min 8 chars)"
+                class="flex-1 px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 text-sm focus:bg-white"
+            >
+            <button type="submit" class="py-2 px-4 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition shrink-0">
+                {{ trans('reset_password') }}
+            </button>
+        </form>
+    </div>
+
+    <!-- Active Sessions -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold text-slate-900 mb-3">{{ trans('active_sessions') }} ({{ sessions|length }})</h2>
+        <div class="divide-y divide-slate-100">
+            {% for s in sessions %}
+            <div class="py-2.5 flex items-center justify-between text-xs">
+                <div>
+                    <span class="font-semibold text-slate-800">{{ s.ip_address }}</span>
+                    <span class="text-slate-400 ml-2 truncate inline-block max-w-[200px] align-bottom">{{ s.user_agent }}</span>
+                </div>
+                <span class="text-slate-500 tabular-nums">{{ s.last_activity }}</span>
+            </div>
+            {% else %}
+            <div class="text-xs text-slate-400 py-2">No active sessions.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Owner Private Notes -->
+    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold text-slate-900 mb-1">{{ trans('owner_private_notes') }}</h2>
+        <p class="text-xs text-slate-500 mb-4">Private notes visible ONLY to the Owner.</p>
+
+        <form action="/staff/{{ staff.id }}/notes" method="POST" class="space-y-3 mb-6">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <textarea name="note" required rows="2" placeholder="Add private note about this staff member..." class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-slate-50 text-slate-900 text-xs focus:bg-white"></textarea>
+            <div class="flex justify-end">
+                <button type="submit" class="py-1.5 px-3 bg-slate-800 text-white rounded-lg text-xs font-semibold hover:bg-slate-700 transition">
+                    Add Note
+                </button>
+            </div>
+        </form>
+
+        <div class="space-y-3">
+            {% for n in notes %}
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-100 text-xs">
+                <p class="text-slate-800">{{ n.note }}</p>
+                <div class="mt-2 text-[10px] text-slate-400 flex items-center justify-between">
+                    <span>By {{ n.author_name }}</span>
+                    <span class="tabular-nums">{{ n.created_at }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

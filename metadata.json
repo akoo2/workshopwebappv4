@@ -1,0 +1,6 @@
+{
+  "name": "TV Repair Workshop Management System",
+  "description": "Mobile-first TV repair workshop management system for technicians and workshop owners with multilingual support, inventory, repairs, and financial analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

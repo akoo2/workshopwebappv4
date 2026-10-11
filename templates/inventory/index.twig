@@ -1,0 +1,167 @@
+{% extends 'layout.twig' %}
+
+{% block title %}{{ trans('inventory') }} - {{ trans('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">{{ trans('inventory') }}</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Workshop components, LED backlight strips, T-Con boards & stock movements.</p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+            <a href="/inventory/requests" class="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">
+                Part Requests
+            </a>
+            <a href="/inventory/new" class="py-2.5 px-4 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>Add Part Batch</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Exchange Rate Bar & Quick Filters -->
+    <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
+        <form method="GET" action="/inventory" class="flex items-center gap-3 flex-wrap flex-1">
+            <select name="category" onchange="this.form.submit()" class="bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-700 font-medium">
+                <option value="0">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label class="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700 bg-slate-50 py-2 px-3 rounded-lg border border-slate-200">
+                <input type="checkbox" name="low_stock" value="1" {% if low_stock_only %}checked{% endif %} onchange="this.form.submit()" class="rounded text-indigo-600">
+                <span>Low Stock Only</span>
+            </label>
+
+            <input type="text" name="q" value="{{ search }}" placeholder="Filter part name / SN..." class="bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-slate-700 flex-1 min-w-[150px]">
+        </form>
+
+        <!-- Current Exchange Rate Display / Owner Update Form -->
+        <div class="flex items-center gap-3 self-end md:self-auto border-t md:border-t-0 pt-2 md:pt-0">
+            <div class="text-right">
+                <span class="text-[10px] text-slate-400 block font-semibold uppercase">Exchange Rate</span>
+                <span class="font-bold text-slate-900 tabular-nums">1 USD = {{ exchange_rate }} IQD</span>
+            </div>
+
+            {% if user.role == 'OWNER' %}
+            <form action="/exchange-rate" method="POST" class="flex items-center gap-1">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <input type="number" name="rate_usd_to_iqd" value="{{ exchange_rate }}" class="w-20 px-2 py-1.5 border border-slate-200 rounded-lg text-xs tabular-nums text-center">
+                <button type="submit" class="py-1.5 px-2 bg-slate-800 text-white rounded-lg text-[10px] font-bold">Update</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Parts List Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+                    <tr>
+                        <th class="py-3.5 px-4">Component</th>
+                        <th class="py-3.5 px-4">Category</th>
+                        <th class="py-3.5 px-4">Stock</th>
+                        {% if can_view_cost %}
+                        <th class="py-3.5 px-4">Cost Price</th>
+                        {% endif %}
+                        <th class="py-3.5 px-4">Selling Price</th>
+                        <th class="py-3.5 px-4 text-right">Stock Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-800">
+                    {% for p in parts %}
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="py-3.5 px-4">
+                            <span class="font-bold text-slate-900 block">{{ p.name }}</span>
+                            {% if p.serial_number %}
+                            <span class="text-[11px] text-slate-400 font-mono">{{ p.serial_number }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="px-2 py-0.5 rounded-md bg-slate-100 font-medium text-slate-600">
+                                {{ p.category_name }}
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="font-bold tabular-nums px-2 py-0.5 rounded-full {% if p.quantity <= p.min_stock %}bg-red-100 text-red-700{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+                                {{ p.quantity }}
+                            </span>
+                            <span class="text-[10px] text-slate-400 ml-1">/ min {{ p.min_stock }}</span>
+                        </td>
+                        {% if can_view_cost %}
+                        <td class="py-3.5 px-4 tabular-nums text-slate-600">
+                            {% if p.cost_price is not null %}
+                                {{ p.cost_currency == 'USD' ? '$' ~ p.cost_price : p.cost_price ~ ' IQD' }}
+                            {% else %}
+                                <span class="text-slate-300">-</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                        <td class="py-3.5 px-4 font-bold tabular-nums text-slate-900">
+                            {% if p.selling_currency == 'USD' %}
+                                ${{ p.selling_price }} <span class="text-[10px] text-slate-400 font-normal">({{ (p.selling_price * exchange_rate)|number_format }} IQD)</span>
+                            {% else %}
+                                {{ p.selling_price|number_format }} IQD <span class="text-[10px] text-slate-400 font-normal">(${{ (p.selling_price / exchange_rate)|round(1) }})</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-4 text-right">
+                            <button onclick="document.getElementById('adjust-modal-{{ p.id }}').classList.remove('hidden')" class="py-1 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer">
+                                Adjust &plusmn;
+                            </button>
+
+                            <!-- Stock Adjustment Modal -->
+                            <div id="adjust-modal-{{ p.id }}" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden text-left">
+                                <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200">
+                                    <h3 class="font-bold text-slate-900 text-sm mb-1">Adjust Stock: {{ p.name }}</h3>
+                                    <p class="text-[11px] text-slate-500 mb-4">Current stock: <strong class="text-slate-800">{{ p.quantity }}</strong></p>
+
+                                    <form action="/inventory/{{ p.id }}/adjust" method="POST" class="space-y-3">
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Change Quantity (+ or -)</label>
+                                            <input type="number" name="quantity_change" required placeholder="e.g. 5 or -2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Movement Type</label>
+                                            <select name="movement_type" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+                                                <option value="PURCHASE">PURCHASE (New Stock Delivery)</option>
+                                                <option value="MANUAL_ADJUST">MANUAL_ADJUST (Audit / Correction)</option>
+                                                <option value="REPAIR_RETURN">REPAIR_RETURN (Defective Return)</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Mandatory Reason / Note</label>
+                                            <input type="text" name="reason" required placeholder="e.g. Received shipment from Erbil market" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+                                        </div>
+
+                                        <div class="pt-2 flex justify-end gap-2">
+                                            <button type="button" onclick="document.getElementById('adjust-modal-{{ p.id }}').classList.add('hidden')" class="py-1.5 px-3 rounded-lg text-slate-600 text-xs font-semibold">
+                                                Cancel
+                                            </button>
+                                            <button type="submit" class="py-1.5 px-3 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700">
+                                                Save Movement
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="p-8 text-center text-slate-500 text-xs">No spare parts found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
